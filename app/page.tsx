@@ -55,9 +55,15 @@ export default function Home() {
   };
 
   const toggleHabit = async (activityId: string) => {
+    // FIX: Normalize today to midnight for fair comparison
     const today = new Date();
     today.setHours(0, 0, 0, 0);
-    if (selectedDate > today) return;
+    
+    const targetDate = new Date(selectedDate);
+    targetDate.setHours(0, 0, 0, 0);
+
+    // Only block if the selected day is strictly GREATER than today
+    if (targetDate > today) return;
 
     const dateStr = selectedDate.toISOString().split('T')[0];
     const isCurrentlyDone = !!completedLogs[activityId];
@@ -92,10 +98,17 @@ export default function Home() {
     fetchData();
   };
 
+  // FIX: isFuture helper for UI consistency
+  const todayMidnight = new Date();
+  todayMidnight.setHours(0, 0, 0, 0);
+  const selectedMidnight = new Date(selectedDate);
+  selectedMidnight.setHours(0, 0, 0, 0);
+  
+  const isFuture = selectedMidnight > todayMidnight;
+
   const totalActivities = activities.length;
   const completedCount = Object.values(completedLogs).filter(Boolean).length;
   const progressPercentage = totalActivities > 0 ? (completedCount / totalActivities) * 100 : 0;
-  const isFuture = selectedDate > new Date(new Date().setHours(23, 59, 59, 999));
 
   const days = [-3, -2, -1, 0, 1, 2, 3].map(offset => {
     const d = new Date();
@@ -137,7 +150,12 @@ export default function Home() {
         <div className="flex justify-between items-center mb-12 bg-slate-200/30 p-1.5 rounded-[2rem] backdrop-blur-md">
           {days.map((date, i) => {
             const isSelected = date.toDateString() === selectedDate.toDateString();
-            const isDayInFuture = date > new Date(new Date().setHours(23, 59, 59, 999));
+            
+            // FIX: Inline date comparison for the circles
+            const checkDate = new Date(date);
+            checkDate.setHours(0,0,0,0);
+            const isDayInFuture = checkDate > todayMidnight;
+
             return (
               <button 
                 key={i}
@@ -180,7 +198,7 @@ export default function Home() {
           )}
         </div>
 
-        {/* Yearly Heatmap (Now positioned AFTER activities) */}
+        {/* Yearly Heatmap */}
         <section className="pb-10">
           <h2 className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-3 ml-2">2026 Consistency</h2>
           <div className="bg-white p-4 rounded-[2rem] shadow-sm border border-slate-100 overflow-x-auto">
